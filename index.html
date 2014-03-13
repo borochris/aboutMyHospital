@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+	Hospital Information System
+	Author: Chris Casey
+	Copyright 2014 CPC Computer Solutions Ltd.
+ 
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+ 
+       http://www.apache.org/licenses/LICENSE-2.0
+ 
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="//cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css" rel="stylesheet" />
+    <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.min.css" rel="stylesheet" />
+    <link href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+	<link rel="stylesheet" type="text/css" href="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css">
+	<!-- <link href="/dataTables/jquery.dataTables.css" rel="stylesheet" /> -->
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="/bootstrap-3.0.0/assets/js/html5shiv.js"></script>
+      <script src="/bootstrap-3.0.0/assets/js/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <link rel="shortcut icon" href="/images/CPC computer Solutions.ico" />
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-144-precomposed.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-114-precomposed.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-72-precomposed.png" />
+    <link rel="apple-touch-icon-precomposed" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-57-precomposed.png" />
+
+    <script src="/socket.io/socket.io.js"></script>
+    <!--[if (IE 6)|(IE 7)|(IE 8)]><script type="text/javascript" src="//ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js"></script><![endif]-->
+
+    <title>My Hospital</title>
+
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+
+      .infoPanel {
+        background-color: #eeeeee;
+        margin-bottom: 10px;
+        padding: 1px 8px 5px 8px;
+      }
+
+      .infoHeader {
+        background-color: #dddddd;        
+      }
+
+      .nav > li.disabled.nav-header > a {
+        cursor: default;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .focusedInput {
+        border-color: rgba(82,168,236,.8);
+        outline: 0;
+        outline: thin dotted \9;
+        -moz-box-shadow: 0 0 8px rgba(82,168,236,.6);
+        box-shadow: 0 0 8px rgba(82,168,236,.6) !important;
+      }
+		/* cpc fix overflow in detail table */
+	  .table-condensed {
+		table-layout: fixed;
+		word-wrap: break-word;
+	  }
+		.scroll-x {
+			overflow-x: auto;
+		}
+    </style>
+
+
+  </head>
+
+  <body>
+
+
+     <!-- Main Page Definition -->
+
+    <!-- NavBar header -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="container">
+          <div class="navbar-header">
+            <div class="navbar-brand visible-xs" id="ewd-navbar-title-phone">aboutMyHospital</div>
+            <div class="navbar-brand hidden-xs" id="ewd-navbar-title-other">about My Hospital</div>
+            <button class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+          </div>
+          <div class="navbar-collapse collapse navbar-ex1-collapse">
+            <p class="navbar-text navbar-right" style="display: none" >
+              Logged in as <span id="loggedInAs"></span>
+            </p>
+		    <form class="navbar-form navbar-right">
+              <button id="loginBtn" class="btn btn-default" >Login</button>
+			  <button id="contactBtn" class="btn btn-default" disabled=true>Contact Us</button>
+			  <button id="aboutBtn" class="btn btn-default" disabled=true >About</button>
+			  <button id="addWifiBtn" class="btn btn-default" style="display: none">Add Wifi Info</button>
+			  <button id="loadDataBtn" class="btn btn-default" style="display: none">Load New Data</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </nav>
+	
+    <!-- Main body -->
+    <div class="container-fluid">
+	  <div class="col-sm-2" id="menuHolder">
+	    <div >
+			<img class="img-responsive" src="/images/CPC computer Solutions.jpg" </img>
+		</div>
+		<div  id="outerMenu">
+            <ul id="outerMenuList" class="nav nav-pills nav-stacked">
+            </ul>
+        </div>
+	  </div>
+        <div id="summaryPage" class="collapse in col-sm-10">
+			<div class="modal-dialog" >
+			  <div id="loginModalPanel" class="modal-content" style="display: none">
+				<div class="modal-header">
+				  <h3 id="ewd-loginPanel-title">Authentication</h3>
+				</div>
+				<div id="loginPanelBody" class="modal-body">
+				  <legend>Please log in</legend>
+				  <div class="form-group">
+					<label for="username">Username: </label>
+					<input type="text" class="form-control focusedInput" id="username" placeholder="Enter your Username" />
+				  </div>
+				  <div class="form-group">
+					<label for="password">Password: &nbsp;</label>
+					<input type="password" class="form-control" id="password" placeholder="Enter your Password" />
+				  </div>
+				</div>
+				<div class="modal-footer">
+				  <a href="#" id="loginFormBtn" class="btn btn-primary">Login</a>
+				</div>
+			  </div>
+			</div>
+			<div class="modal-dialog" >
+			  <div id="loadDataPanel" class="modal-content" style="display: none">
+				<div class="modal-header">
+				  <h3>Load Data from CSV (admin only)</h3>
+				</div>
+				<div id="loadDataPanelBody" class="modal-body">
+				  <legend>Table to Load</legend>
+				  <div class="form-group">
+					<label for="dumptableName">TableName: </label>
+					<input type="text" class="form-control focusedInput" id="dumptableName" placeholder="Enter table name" />
+				  </div>
+					<!-- <input type="textarea" rows="20" class="form-control" id="dataDump" placeholder="Dump CSV here" /> -->
+					<textarea id="dataDump" class="form-control" rows="20" ></textarea>
+				</div>
+				<div class="modal-footer">
+				  <a href="#" id="loadDataFormBtn" class="btn btn-primary">Upload</a>
+				</div>
+			  </div>
+			</div>
+
+		<div id="splash" >
+			<h2> Welcome to aboutMyHospital </h2>
+			<p> This site is designed for anyone who wants to find out useful information about a hospital.
+			In it's first instance it is just showing Wifi information
+			</p>
+			<p> Type in the first few characters in any of the following to see a selection of Hospitals
+			Then click on a row to see wifi details
+			</p>
+			<div id="selectHospital" class=form">
+				<div class="form-group">
+				  <label for="selectedHospital" class="col-sm-1 control-label">Select</label>
+				  <input type="hidden" id="selectedHospital" style="width:200px"/>
+				  <input type="hidden" id="selectedPostCode" style="width:140px"/>
+				  <input type="hidden" id="selectedCity" style="width:180px"/>
+				  <!-- <input type="hidden" id="selectedTrust" style="width:200px"/> -->
+				</div>
+			</div>
+		</div>
+
+		<!-- list view -->
+			<div class="container-fluid" id="listHolder" >
+				<div class="panel-body" id="hospitalListPnl" >
+						<div class="panel panel-info">
+							<div class="panel-heading" id="hospitalText"></div>
+								<div class="table-responsive">
+									<table class="table display" id='hospitalListTable'>
+										<tbody></tbody>
+									</table>
+								</div>
+						</div>					
+				</div>
+			</div>
+			<div class="panel panel-primary col-sm-4" id="detailHolder" style="display: none">
+				<div class="panel-heading" id="detailHeader" >
+					Wifi Details
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">Hospital</label>
+					<div class="col-sm-2"></div>
+					<div class="col-sm-8">
+					  <p class="form-control-static" id="wifiFormHospitalName"></p>
+					  <p class="form-control-static" id="wifiFormHospitalId"></p>
+					  <p class="form-control-static" id="wifiFormHospitalIntId" style="display: none"></p>
+					</div>
+				  </div>
+				<div class="panel-body" id="detailPnl">
+					<form role="form" id="addWifiForm" style="display: none" >
+						<div class="checkbox"><label><input type="checkbox"  id="wifiFormCb1" value="">Wifi Exists</input></label></div>
+						<div class="checkbox"><label><input type="checkbox" id="wifiFormCb2" value="">Wifi Open</input></label></div>
+						<div class="checkbox"><label><input type="checkbox"  id="wifiFormCb3" value="">Free</input></label></div>
+						<div class="input-group col-sm-8" >
+							<label for="wifiCost" class="col-sm-1 control-label">Cost</label>
+							  <span class="input-group-addon">£</span>
+							  <input id="wifiCost" type="number" class="form-control">
+							  <span class="input-group-addon">.00</span>
+							</div>
+					<div class="form-group">
+						<label for="EditedByName">Added By: </label>
+						<input type="text" class="form-control focusedInput" id="EditedByName" placeholder="Enter name" />
+					</div>
+					<textarea rows="3" class="form-control" id="wifiComment" placeholder="Add Comments" ></textarea> 
+					<a href="#" id="wifiFormBtn" class="btn btn-primary" style="display: none" >Update</a>
+					</form>
+				<!--	<div class="table-responsive" id="detailPnl"></div> -->
+				</div>
+			</div>
+
+    </div>
+    <!-- Bootstrap core JavaScript  -->
+    <!-- Placed at the end of the document so the pages load faster -->
+	
+    <script type="text/javascript" src="//code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript" src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.min.js"></script>
+
+    <script src="/ewdLite/EWD.js"></script>
+    <script type="text/javascript" src="/ewdLite/ewdBootstrap3.js"></script>
+    
+    <script type="text/javascript" src="app.js"></script>
+	<script type="text/javascript" src="csv2json.js"></script>
+	
+	<script type="text/javascript" charset="utf8" src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
+	<!--- <script type="text/javascript" src="/dataTables/jquery.dataTables.js"></script> -->
+	<!-- <script type="text/javascript" src="/flot/jquery.flot.js"></script>
+	<script type="text/javascript" src="/flot/jquery.flot.time.js"></script>
+	<script type="text/javascript" src="/flot/jumflot-min.js"></script>
+	<script type="text/javascript" src="/flot/jquery.flot.categories.js"></script>
+	<script type="text/javascript" src="/flot/jquery.flot.selection.js"></script>
+	<script type="text/javascript" src="/flot/jquery.flot.resize.js"></script>
+	-->
+    <!--  =======================================  -->
+  </body>
+</html>
