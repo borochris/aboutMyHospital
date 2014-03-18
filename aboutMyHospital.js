@@ -70,7 +70,7 @@ module.exports = {
     }
 	//--------------- this code can run un-authenticated ----------------------------------
 	if (type == 'wifiQuery') {
-		if (!wifiIndex) var wifiIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","wifi","data"]);
+		if (!wifiIndex) var wifiIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","wifi"]);
 		var results = [];
 		var hospitals = {};
 		var i=0;
@@ -88,6 +88,20 @@ module.exports = {
         message: results
       });		
 	}
+	if (type == 'getStats') {
+		if (!statsIndex) var statsIndex =  new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals"]);
+		var lastIx=statsIndex._last;
+		if (!wifiIndex) var wifiIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","wifi"]);
+		var totWifi = wifiIndex._count();
+		ewd.sendWebSocketMsg({
+			type: 'hospitalStats',
+			message: {
+				total:lastIx,
+				totalWifiKnown:totWifi
+				}
+		});
+		return;
+	}
 	if (type == 'cityQuery') {
       if (!townIndex) var townIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","Town"]);
       var results = [];
@@ -99,11 +113,15 @@ module.exports = {
 		if (i > 40) return true;
 		cities.push({id:i,text:name});
         node._forEach(function(id) {
-          j++;
-          if (j > 40) return true;
 		  var onehospital=getHospital(ewd,id);
-          results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
-          hospitals[id] = onehospital;
+		  if (onehospital.MainHospital) {
+			  if (onehospital.close_date === '') {
+				  j++;
+				  if (j > 40) return true;
+				  results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
+				  hospitals[id] = onehospital;
+			  }
+		  }
         });
         if (i > 40) return true;
       });
@@ -125,17 +143,33 @@ module.exports = {
 	  var postCodes=[];
       var hospitals = {};
       var i = 0;var j=0;
-      postCodeIndex._forPrefix(params.prefix.toUpperCase(), function(name, node) {
+	  var thisPrefix=params.prefix.toUpperCase();
+	  var pushedThis=[];
+      postCodeIndex._forPrefix(thisPrefix, function(name, node) {
+		var shortPost=name.split(' ')[0];
 		i++;
 		if (i > 40) return true;
-		postCodes.push({id:i,text:name});
-        node._forEach(function(id) {
-          j++;
-          if (j > 40) return true;
-		  var onehospital=getHospital(ewd,id);
-          results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
-          hospitals[id] = onehospital;
-        });
+		if (thisPrefix.split(' ').length ==1 ) {
+			//entered postcode 1st part only
+				if (!pushedThis[shortPost]) {
+					pushedThis[shortPost]=true;
+					postCodes.push({id:i,text:shortPost});
+					}
+			}
+		else {postCodes.push({id:i,text:name});}
+        if (!params.final || (shortPost == thisPrefix)) {
+			node._forEach(function(id) {
+			  var onehospital=getHospital(ewd,id);
+			  if (onehospital.MainHospital) {
+				  if (onehospital.close_date === '') {
+					  j++;
+					  if (j > 40) return true;
+					  results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
+					  hospitals[id] = onehospital;
+				  }
+			  }
+			});
+		}
         if (i > 40) return true;
       });
       ewd.session.$('hospitals')._delete();
@@ -161,11 +195,13 @@ module.exports = {
 		if (i > 40) return true;
 		hospitals.push({id:i,text:name});
         node._forEach(function(id) {
-          j++;
-          if (j > 40) return true;
 		  var onehospital=getHospital(ewd,id);
-          results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
-          hospitalObj[id] = onehospital;
+		  if (onehospital.close_date === '') {
+			  j++;
+			  if (j > 40) return true;
+			  results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
+			  hospitalObj[id] = onehospital;
+		  }
         });
         if (i > 40) return true;
       });
@@ -183,7 +219,50 @@ module.exports = {
       });
       return;
 	}
-	
+	//this used to be secure only but have opened up to allow unauthenticated input
+	if (type === 'saveWifiData') {
+		var intId=params.intId;
+		if (params.EditedBy == '') return {error: 'A username must be entered'};
+		var auditGbl = new ewd.mumps.GlobalNode("cpcHospitalAudit",[]);
+		var lastAuditIx = auditGbl._last;
+		lastAuditIx++;
+		var newDataGbl = new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals",intId]);
+		var newDataIx = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","wifi",intId,"data"]);
+		var data=newDataGbl._getDocument();
+		var timeStamp = new Date().toUTCString();
+		var oldRec=data.wifi;
+		var auditData={
+			Id: intId,
+			timeStamp: timeStamp,
+			user: params.EditedBy,
+			changes: {}
+		};	
+		data.wifi={
+			exists: params.Exists,
+			open: params.Open,
+			free: params.Free,
+			cost: params.Cost,
+			editedBy: params.EditedBy,
+			comment: params.Comment
+		};
+		var newRec=data.wifi;
+		for (var fld in newRec) {
+			if (newRec[fld] != oldRec[fld]) {
+				auditData.changes[fld]={
+					original: oldRec[fld],
+					revised: newRec[fld] 
+				};
+			}
+		};
+
+		newDataGbl._setDocument(data);
+		newDataIx._value = true;
+		auditGbl.$(lastAuditIx)._setDocument(auditData);
+		return {
+			error:false,
+			message:'updated '+intId
+			};
+	}
 	//-------------------------------------------------------------------------------------
 	//--------------- don't go past this point unless Authenticated -----------------------
     if (!ewd.session.isAuthenticated) return;
@@ -198,21 +277,6 @@ module.exports = {
 			newDataGbl._setDocument(data[ix]);
 		}
 		return;
-	}
-	if (type === 'saveWifiData') {
-		var intId=params.intId;
-		var newDataGbl = new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals",intId]);
-		var data=newDataGbl._getDocument()
-		data.wifi={
-			exists: params.Exists,
-			open: params.Open,
-			free: params.Free,
-			cost: params.Cost,
-			editedBy: params.EditedBy,
-			comment: params.Comment
-		};
-		newDataGbl._setDocument(data);
-		return 'updated '+intId;
 	}
 	ewd.sendWebSocketMsg({
           type: 'unknownMessage',

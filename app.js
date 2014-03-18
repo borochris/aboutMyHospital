@@ -131,7 +131,7 @@ EWD.onSocketsReady = function() {
 			type: 'wifiQuery',
 			params: {prefix: ''}
 	});
-
+	EWD.sockets.sendMessage({type: 'getStats', params:{}});
 	$("#selectedHospital").select2({
 		placeholder: "Hospital name",
 		minimumInputLength: 4,
@@ -285,14 +285,42 @@ EWD.onSocketMessage = function(messageObj) {
 		EWD.application.select2T.callback(EWD.application.select2T);
 		return;
 	}
+	if (messageObj.type === 'hospitalStats') {
+		var statsData=[
+			{color:'#0000FF', label:'all sites ('+messageObj.message.total+')', data:messageObj.message.total},
+			{color:'#FF0000',label:'known Wifi ('+messageObj.message.totalWifiKnown+')', data:messageObj.message.totalWifiKnown}
+		];
+		$.plot('#graphHolder', statsData, {
+			series: {
+				pie: {
+					show: true,
+					radius: 3/4			
+				}
+			},
+			legend: {show:false}
+		});
+		return;
+	}
+	if (messageObj.type === 'saveWifiData') {
+		if (messageObj.message.error) {
+			toastr.warning(messageObj.message.error);
+			return;
+			};
+		if (messageObj.message.message) {
+			toastr.success(messageObj.message.message);
+		}
+		return;
+	}
 	if (messageObj.type === 'hospitalSummaryList') {
 		//console.log('hospitalList: '+ JSON.stringify(messageObj,2));
 		var aaData=[];
 		EWD.application.currentList={};
 		var data=messageObj.message;
 		for (var i=0;i<data.length;i++) {
-			var wifi='unknown';
-			if (data[i].data.wifi) wifi=data[i].data.wifi.exists;
+			var wifi='?';
+			if (data[i].data.wifi) {
+				wifi= (data[i].data.wifi.exists) ? 'Yes' : 'No';
+				}
 			aaData.push(
 				[
 				data[i].id,
@@ -309,7 +337,7 @@ EWD.onSocketMessage = function(messageObj) {
 			'bDestroy':true,
 			'aaData': aaData,
 			'aoColumns': [
-				{'bVisible':false},{'sTitle':'hospital Id'},{'sTitle':'Name'},{'sTitle':'Town'},{'sTitle':'Wifi Enabled'}
+				{'bVisible':false},{'sTitle':'hospital Id'},{'sTitle':'Name'},{'sTitle':'Town'},{'sTitle':'Wifi'}
 			]
 		}).css('width','');
 		$(hospitalListTableDT.fnGetNodes()).click(function(e){
@@ -326,7 +354,11 @@ EWD.onSocketMessage = function(messageObj) {
 			$('#wifiCost').val('');
 			$('#EditedByName').val('');
 			$('#wifiComment').val('');
-
+			var address='';;
+			$('#wifiFormHospitalAddress').html(thisHosp.Address_line_1+'<br>'+thisHosp.Address_line_2+'<br>'+thisHosp.Address_line_3+'<br>'+thisHosp.Address_line_4+'<br>'+thisHosp.Address_line_5+'<br>'+thisHosp.PostCode);
+			$('#wifiFormHealthACode').text(thisHosp.High_Level_Health_Authority_Code);
+			$('#wifiFormContactName').text(thisHosp.contact_name);
+			$('#wifiFormContactNo').text(thisHosp.contact_tel_no);
 			if (thisHosp.wifi) {
 				$('#wifiFormCb1').prop('checked',thisHosp.wifi.exists);
 				$('#wifiFormCb2').prop('checked',thisHosp.wifi.open);

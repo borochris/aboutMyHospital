@@ -41,7 +41,7 @@
     <![endif]-->
 
     <!-- Fav and touch icons -->
-    <link rel="shortcut icon" href="/images/CPC computer Solutions.ico" />
+    <link rel="shortcut icon" href="/images/favicon.png" />
     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-144-precomposed.png" />
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-114-precomposed.png" />
     <link rel="apple-touch-icon-precomposed" sizes="72x72" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-72-precomposed.png" />
@@ -142,6 +142,10 @@
             <ul id="outerMenuList" class="nav nav-pills nav-stacked">
             </ul>
         </div>
+		<div class="text-centre">
+			<h4>Current Statistics</h4>
+			<div class="container-fluid" id="graphHolder" style="height: 200px;"></div>
+		</div>
 	  </div>
         <div id="summaryPage" class="collapse in col-sm-10">
 			<div class="modal-dialog" >
@@ -218,36 +222,44 @@
 				</div>
 			</div>
 			<div class="panel panel-primary col-sm-4" id="detailHolder" style="display: none">
-				<div class="panel-heading" id="detailHeader" >
-					Wifi Details
+				<div class="panel-heading" id="wifiFormHospitalName" >
 				</div>
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Hospital</label>
-					<div class="col-sm-2"></div>
-					<div class="col-sm-8">
-					  <p class="form-control-static" id="wifiFormHospitalName"></p>
-					  <p class="form-control-static" id="wifiFormHospitalId"></p>
-					  <p class="form-control-static" id="wifiFormHospitalIntId" style="display: none"></p>
-					</div>
-				  </div>
 				<div class="panel-body" id="detailPnl">
-					<form role="form" id="addWifiForm" style="display: none" >
-						<div class="checkbox"><label><input type="checkbox"  id="wifiFormCb1" value="">Wifi Exists</input></label></div>
-						<div class="checkbox"><label><input type="checkbox" id="wifiFormCb2" value="">Wifi Open</input></label></div>
-						<div class="checkbox"><label><input type="checkbox"  id="wifiFormCb3" value="">Free</input></label></div>
-						<div class="input-group col-sm-8" >
-							<label for="wifiCost" class="col-sm-1 control-label">Cost</label>
-							  <span class="input-group-addon">£</span>
-							  <input id="wifiCost" type="number" class="form-control">
-							  <span class="input-group-addon">.00</span>
+					<ul class="nav nav-tabs" >
+						<li class="active"> <a href="#tabWifi" data-toggle="tab">Wifi</a></li>
+						<li><a href="#tabDetail" data-toggle="tab">Details</a></li>
+					</ul>
+					<div class="tab-content" id="addWifiForm">
+						<div class="tab-pane active" id="tabWifi">
+							<form role="form"  >
+								<div class="checkbox"><label><input type="checkbox"  id="wifiFormCb1" value="">Wifi Exists</input></label></div>
+								<div class="checkbox"><label><input type="checkbox" id="wifiFormCb2" value="">Wifi Open</input></label></div>
+								<div class="checkbox"><label><input type="checkbox"  id="wifiFormCb3" value="">Free</input></label></div>
+								<div class="input-group col-sm-8" >
+									<label for="wifiCost" class="col-sm-1 control-label">Cost</label>
+									  <span class="input-group-addon">£</span>
+									  <input id="wifiCost" type="number" class="form-control">
+									  <span class="input-group-addon">.00</span>
+									</div>
+							<div class="form-group">
+								<label for="EditedByName">Added By: </label>
+								<input type="text" class="form-control focusedInput" id="EditedByName" placeholder="Enter name" />
 							</div>
-					<div class="form-group">
-						<label for="EditedByName">Added By: </label>
-						<input type="text" class="form-control focusedInput" id="EditedByName" placeholder="Enter name" />
-					</div>
-					<textarea rows="3" class="form-control" id="wifiComment" placeholder="Add Comments" ></textarea> 
-					<a href="#" id="wifiFormBtn" class="btn btn-primary" style="display: none" >Update</a>
-					</form>
+							<textarea rows="3" class="form-control" id="wifiComment" placeholder="Add Comments" ></textarea> 
+							<a href="#" id="wifiFormBtn" class="btn btn-primary"  >Update</a>
+							</form>
+						</div>
+						<div class="tab-pane" id="tabDetail">
+							<p id="wifiFormHospitalIntId" style="display: none"></p>
+							<strong>Address</strong>
+							<address id="wifiFormHospitalAddress">
+							</address>
+							<strong>Id</strong><p id="wifiFormHospitalId"></p>
+							<strong>Health Authority Code</strong><p id="wifiFormHealthACode"></p>
+							<strong>Contact Name</strong><p id="wifiFormContactName"></p>
+							<strong>Contact No</strong><p id="wifiFormContactNo"></p>
+						</div>
+					</div>	
 				<!--	<div class="table-responsive" id="detailPnl"></div> -->
 				</div>
 			</div>
@@ -270,13 +282,14 @@
 	
 	<script type="text/javascript" charset="utf8" src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
 	<!--- <script type="text/javascript" src="/dataTables/jquery.dataTables.js"></script> -->
-	<!-- <script type="text/javascript" src="/flot/jquery.flot.js"></script>
+	<!-- 	-->
+	<script type="text/javascript" src="/flot/jquery.flot.js"></script>
 	<script type="text/javascript" src="/flot/jquery.flot.time.js"></script>
 	<script type="text/javascript" src="/flot/jumflot-min.js"></script>
 	<script type="text/javascript" src="/flot/jquery.flot.categories.js"></script>
 	<script type="text/javascript" src="/flot/jquery.flot.selection.js"></script>
 	<script type="text/javascript" src="/flot/jquery.flot.resize.js"></script>
-	-->
+	<script type="text/javascript" src="/flot/jquery.flot.pie.js"></script>
     <!--  =======================================  -->
   </body>
 </html>
