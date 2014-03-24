@@ -18,26 +18,30 @@
 -->
 <html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
   <head>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta http-equiv="Expires" content="0" />
 
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-touch-fullscreen" content="yes" />
     <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet" /> -->
+    <link href="/respond/bootstrap.min.css" rel="stylesheet" />
+    <link href="/respond/bootstrap-theme.min.css" rel="stylesheet">
+	
     <link href="//cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css" rel="stylesheet" />
     <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.min.css" rel="stylesheet" />
     <link href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
 	<link rel="stylesheet" type="text/css" href="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css">
-	<!-- <link href="/dataTables/jquery.dataTables.css" rel="stylesheet" /> -->
 
+    <!--[if (IE 6)|(IE 7)|(IE 8)]><script type="text/javascript" src="//ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js"></script><![endif]-->
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
-      <script src="/bootstrap-3.0.0/assets/js/html5shiv.js"></script>
-      <script src="/bootstrap-3.0.0/assets/js/respond.min.js"></script>
+      <script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="/respond/respond.js"></script>
     <![endif]-->
 
     <!-- Fav and touch icons -->
@@ -123,7 +127,7 @@
 		    <form class="navbar-form navbar-right">
               <button id="loginBtn" class="btn btn-default" >Login</button>
 			  <button id="contactBtn" class="btn btn-default" disabled=true>Contact Us</button>
-			  <button id="aboutBtn" class="btn btn-default" disabled=true >About</button>
+			  <button id="aboutBtn" class="btn btn-default" data-toggle="modal" data-target="#aboutModal" >About</button>
 			  <button id="addWifiBtn" class="btn btn-default" style="display: none">Add Wifi Info</button>
 			  <button id="loadDataBtn" class="btn btn-default" style="display: none">Load New Data</button>
             </form>
@@ -148,6 +152,29 @@
 		</div>
 	  </div>
         <div id="summaryPage" class="collapse in col-sm-10">
+			<div class="modal fade" id="aboutModal" tabindex="-1" role="dialog" aria-hidden="true">
+				<div class="modal-dialog">
+				  <div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+						<h2 class="modal-title">About</h2>
+					</div>
+					<div class="modal-body">
+						<h3>aboutMyHospital</h3>
+						<h3>Build 0.3</h3>
+						<h4>19 march 2014</h4>
+						<h5>&copy; 2014 CPC Computer Solutions ltd</h5>
+						<hr/>
+						<p>Built by Chris Casey</p>
+						<p> On behalf of #nhshackdays </p>
+						<p> Using <a href="http://ewdjs.com">EWD.js</a> </p>
+						<hr/>
+						<p> <a href="http://chrispcasey.wordpress.com">Comment on my blog</a></p>
+						<p> Talk to me on Twitter @ChrisPCasey </p>
+					</div>
+				  </div>
+				</div>
+			</div>
 			<div class="modal-dialog" >
 			  <div id="loginModalPanel" class="modal-content" style="display: none">
 				<div class="modal-header">
@@ -195,7 +222,7 @@
 			In it's first instance it is just showing Wifi information
 			</p>
 			<p> Type in the first few characters in any of the following to see a selection of Hospitals
-			Then click on a row to see wifi details
+			Then click on a hospital to see and update wifi details
 			</p>
 			<div id="selectHospital" class=form">
 				<div class="form-group">
@@ -228,6 +255,7 @@
 					<ul class="nav nav-tabs" >
 						<li class="active"> <a href="#tabWifi" data-toggle="tab">Wifi</a></li>
 						<li><a href="#tabDetail" data-toggle="tab">Details</a></li>
+						<li><a href="#tabParking" data-toggle="tab">Parking</a></li>
 					</ul>
 					<div class="tab-content" id="addWifiForm">
 						<div class="tab-pane active" id="tabWifi">
@@ -240,9 +268,14 @@
 									  <span class="input-group-addon">£</span>
 									  <input id="wifiCost" type="number" class="form-control">
 									  <span class="input-group-addon">.00</span>
-									</div>
+								</div>
 							<div class="form-group">
-								<label for="EditedByName">Added By: </label>
+								<label for="OrigEditedByName">Last Edited By: </label>
+								<p class="form-control-static" id="OrigEditedByName"></p>
+							</div>
+							
+							<div class="form-group">
+								<label for="EditedByName">Edited By: </label>
 								<input type="text" class="form-control focusedInput" id="EditedByName" placeholder="Enter name" />
 							</div>
 							<textarea rows="3" class="form-control" id="wifiComment" placeholder="Add Comments" ></textarea> 
@@ -259,6 +292,18 @@
 							<strong>Contact Name</strong><p id="wifiFormContactName"></p>
 							<strong>Contact No</strong><p id="wifiFormContactNo"></p>
 						</div>
+						<div class="tab-pane" id="tabParking">
+							<p id="parkFormHospitalIntId" style="display: none"></p>
+							<strong>Total Parking</strong><p id="parkFormTotal"></p>
+							<strong>Staff Parking</strong><p id="parkFormStaff"></p>
+							<strong>Visitor Parking</strong><p id="parkFormVisit"></p>
+							<strong>Disabled Parking</strong><p id="parkFormDisabled"></p>
+							<strong>Visitor hourly Cost</strong><p id="parkFormVisitorCost"></p>
+							<strong>Staff hourly Cost</strong><p id="parkFormStaffCost"></p>
+							<strong>Concession Scheme</strong><p id="parkFormConc"></p>
+							<strong>Disabled Charge</strong><p id="parkFormDisabledCost"></p>
+						</div>
+
 					</div>	
 				<!--	<div class="table-responsive" id="detailPnl"></div> -->
 				</div>

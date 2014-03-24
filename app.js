@@ -15,7 +15,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-EWD.sockets.log=false;
+EWD.sockets.log=true;
 EWD.application = {
   name: 'aboutMyHospital',
   currentPanel:'',
@@ -167,7 +167,7 @@ EWD.onSocketsReady = function() {
 		})
 	})
 	$("#selectedCity").select2({
-		minimumInputLength: 4,
+		minimumInputLength: 3,
 		placeholder: "Town/City",
 		query: function (query) {
 		  EWD.application.select2C = {callback: query.callback,};
@@ -326,6 +326,7 @@ EWD.onSocketMessage = function(messageObj) {
 				data[i].id,
 				data[i].hospitalId,
 				data[i].name,
+				data[i].data.SiteType || '',
 				data[i].data.Address_line_4,
 				wifi
 				]
@@ -337,7 +338,7 @@ EWD.onSocketMessage = function(messageObj) {
 			'bDestroy':true,
 			'aaData': aaData,
 			'aoColumns': [
-				{'bVisible':false},{'sTitle':'hospital Id'},{'sTitle':'Name'},{'sTitle':'Town'},{'sTitle':'Wifi'}
+				{'bVisible':false},{'sTitle':'Id'},{'sTitle':'Name'},{'sTitle':'SiteType'},{'sTitle':'Town'},{'sTitle':'Wifi'}
 			]
 		}).css('width','');
 		$(hospitalListTableDT.fnGetNodes()).click(function(e){
@@ -352,6 +353,7 @@ EWD.onSocketMessage = function(messageObj) {
 			$('#wifiFormCb2').prop('checked',false)
 			$('#wifiFormCb3').prop('checked',false)
 			$('#wifiCost').val('');
+			$('#OrigEditedByName').text('');
 			$('#EditedByName').val('');
 			$('#wifiComment').val('');
 			var address='';;
@@ -364,9 +366,20 @@ EWD.onSocketMessage = function(messageObj) {
 				$('#wifiFormCb2').prop('checked',thisHosp.wifi.open);
 				$('#wifiFormCb3').prop('checked',thisHosp.wifi.free);
 				$('#wifiCost').val(thisHosp.wifi.cost);
-				$('#EditedByName').val(thisHosp.wifi.editedBy);
+				$('#OrigEditedByName').text(thisHosp.wifi.editedBy);
 				$('#wifiComment').val(thisHosp.wifi.comment);
 			}
+			if (thisHosp.Parking) {
+				$('#parkFormTotal').text(thisHosp.Parking.Total_parking_spaces);
+				$('#parkFormStaff').text(thisHosp.Parking.Designated_Staff_parking);
+				$('#parkFormVisit').text(thisHosp.Parking.Designated_parking);
+				$('#parkFormDisabled').text(thisHosp.Parking.Designated_disabled_parking);
+				$('#parkFormVisitorCost').text(thisHosp.Parking.Average_hourly_fee);
+				$('#parkFormStaffCost').text(thisHosp.Parking.Average_hourly_Staff_fee);
+				$('#parkFormConc').text(thisHosp.Parking.Visitor_concession_scheme);
+				$('#parkFormDisabledCost').text(thisHosp.Parking.disabled_parking_charge);
+			}
+
 			$('#addWifiForm').show();
 			showDetail();
 			//EWD.application.oneHospital={};

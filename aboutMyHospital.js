@@ -110,14 +110,15 @@ module.exports = {
       var i = 0;var j=0;
       townIndex._forPrefix(params.prefix.toUpperCase(), function(name, node) {
 		i++;
-		if (i > 40) return true;
+		if (i > 20) return true;
 		cities.push({id:i,text:name});
         node._forEach(function(id) {
 		  var onehospital=getHospital(ewd,id);
-		  if (onehospital.MainHospital) {
+		  if (onehospital.SiteType) {
 			  if (onehospital.close_date === '') {
 				  j++;
-				  if (j > 40) return true;
+				  if (!params.final) {if (j > 40) return true};
+				  if (params.final) {if (j > 120) return true};
 				  results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
 				  hospitals[id] = onehospital;
 			  }
@@ -160,7 +161,7 @@ module.exports = {
         if (!params.final || (shortPost == thisPrefix)) {
 			node._forEach(function(id) {
 			  var onehospital=getHospital(ewd,id);
-			  if (onehospital.MainHospital) {
+			  if (onehospital.SiteType) {
 				  if (onehospital.close_date === '') {
 					  j++;
 					  if (j > 40) return true;
@@ -230,8 +231,9 @@ module.exports = {
 		var newDataIx = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","wifi",intId,"data"]);
 		var data=newDataGbl._getDocument();
 		var timeStamp = new Date().toUTCString();
-		var oldRec=data.wifi;
+		var oldRec=data.wifi || {};
 		var auditData={
+			Type: 'wifi',
 			Id: intId,
 			timeStamp: timeStamp,
 			user: params.EditedBy,
@@ -249,7 +251,7 @@ module.exports = {
 		for (var fld in newRec) {
 			if (newRec[fld] != oldRec[fld]) {
 				auditData.changes[fld]={
-					original: oldRec[fld],
+					original: oldRec[fld] || '',
 					revised: newRec[fld] 
 				};
 			}
