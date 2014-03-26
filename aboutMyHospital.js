@@ -93,11 +93,15 @@ module.exports = {
 		var lastIx=statsIndex._last;
 		if (!wifiIndex) var wifiIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","wifi"]);
 		var totWifi = wifiIndex._count();
+		if (!parkIndex) var parkIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","Parking"]);
+		var totPark = parkIndex._count();
+
 		ewd.sendWebSocketMsg({
 			type: 'hospitalStats',
 			message: {
 				total:lastIx,
-				totalWifiKnown:totWifi
+				totalWifiKnown:totWifi,
+				totalParkKnown: totPark
 				}
 		});
 		return;
@@ -242,12 +246,16 @@ module.exports = {
 		data.wifi={
 			exists: params.Exists,
 			open: params.Open,
+			openStaff: params.OpenStaff,
 			free: params.Free,
+			freeStaff: params.FreeStaff,
 			cost: params.Cost,
+			costStaff: params.costStaff,
 			editedBy: params.EditedBy,
 			comment: params.Comment
 		};
 		var newRec=data.wifi;
+		if (params.testFlag) return {error:false, message:'got test message'};
 		for (var fld in newRec) {
 			if (newRec[fld] != oldRec[fld]) {
 				auditData.changes[fld]={
@@ -256,7 +264,6 @@ module.exports = {
 				};
 			}
 		};
-
 		newDataGbl._setDocument(data);
 		newDataIx._value = true;
 		auditGbl.$(lastAuditIx)._setDocument(auditData);

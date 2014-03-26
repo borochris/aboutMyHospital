@@ -15,7 +15,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-EWD.sockets.log=true;
+EWD.sockets.log=false;
+EWD.testFlag=0;
 EWD.application = {
   name: 'aboutMyHospital',
   currentPanel:'',
@@ -202,10 +203,6 @@ EWD.onSocketsReady = function() {
 	})
 	//
 	  // Login form button handler
-	  $('body').on( 'click', '#loginBtn', function(event) {
-		event.preventDefault(); event.stopPropagation();
-		$('#loginModalPanel').show();
-	  });
 	  $('body').on( 'click', '#loginFormBtn', function(event) {
 		event.preventDefault(); event.stopPropagation();
 		EWD.sockets.submitForm({
@@ -219,7 +216,7 @@ EWD.onSocketsReady = function() {
 	  $('body').on( 'click', '#loadDataBtn', function(event) {
 		event.preventDefault();
 		event.stopPropagation(); // prevent default bootstrap behavior
-		$('#loadDataPanel').show();
+		$('#loadDataPanel').modal('show');
 	  });
 	$('body').on('click','#loadDataFormBtn', function(event) {
 		event.preventDefault(); event.stopPropagation(); // prevent default bootstrap behavior
@@ -233,7 +230,33 @@ EWD.onSocketsReady = function() {
 			}
 		});
 	});
-
+	//all checkbox visual handling here
+	$('.checkbox').children().on('click',function() {
+		var checkId=this.children[0].id;
+		var itsOn=$('#'+checkId+'').is(':checked');
+		if (checkId == 'wifiFormCb3_2') { //free for staff
+			if (itsOn) {
+				$('#staffcostform').hide();
+				if ($('#wifiFormCb3').is(':checked')) $('#allcostform').hide();
+			};
+			if (!itsOn) {
+				$('#staffcostform').show();
+				$('#allcostform').show();
+			};
+		}
+		if (checkId== 'wifiFormCb3') { //change this to point to proper checkbox 
+			if (itsOn) {
+				$('#patientcostform').hide();
+				if ($('#wifiFormCb3_2').is(':checked')) $('#allcostform').hide();
+			};
+			if (!itsOn) {
+				$('#patientcostform').show();
+				$('#allcostform').show();
+				};
+		}
+		//showit=$(this);
+		//console.log('checkbox '+checkId+' is '+$('#'+checkId+'').is(':checked'));
+	});
 	$('body').on('click','#wifiFormBtn', function(event) {
 		event.preventDefault(); event.stopPropagation(); // prevent default bootstrap behavior
 		EWD.sockets.sendMessage({
@@ -243,10 +266,14 @@ EWD.onSocketsReady = function() {
 				intId: $('#wifiFormHospitalIntId').text(),
 				Exists: $('#wifiFormCb1').is(':checked'),
 				Open: $('#wifiFormCb2').is(':checked'),
+				OpenStaff: $('#wifiFormCb2_2').is(':checked'),
 				Free: $('#wifiFormCb3').is(':checked'),
+				FreeStaff: $('#wifiFormCb3_2').is(':checked'),
 				Cost: $('#wifiCost').val(),
+				CostStaff: $('#wifiCost_2').val(),
 				EditedBy: $('#EditedByName').val(),
 				Comment: $('#wifiComment').val(),
+				testFlag: EWD.testFlag
 			}
 		});
 	});
@@ -255,7 +282,8 @@ EWD.onSocketsReady = function() {
 EWD.onSocketMessage = function(messageObj) {
 	console.log('message received: '+messageObj.type);
 	if (messageObj.type === 'EWD.form.login') {
-		$('#loginModalPanel').hide();
+		//$('#loginModalPanel').hide();
+		$('#loginModalPanel').modal('hide');
 		return;
 	}
 	if (messageObj.type === 'loggedInAs') {
@@ -288,7 +316,8 @@ EWD.onSocketMessage = function(messageObj) {
 	if (messageObj.type === 'hospitalStats') {
 		var statsData=[
 			{color:'#0000FF', label:'all sites ('+messageObj.message.total+')', data:messageObj.message.total},
-			{color:'#FF0000',label:'known Wifi ('+messageObj.message.totalWifiKnown+')', data:messageObj.message.totalWifiKnown}
+			{color:'#FF0000',label:'known Wifi ('+messageObj.message.totalWifiKnown+')', data:messageObj.message.totalWifiKnown},
+			{color:'#00FF00',label:'known Parking ('+messageObj.message.totalParkKnown+')', data:messageObj.message.totalParkKnown}
 		];
 		$.plot('#graphHolder', statsData, {
 			series: {
@@ -297,7 +326,7 @@ EWD.onSocketMessage = function(messageObj) {
 					radius: 3/4			
 				}
 			},
-			legend: {show:false}
+			legend: {show:true}
 		});
 		return;
 	}
@@ -351,8 +380,14 @@ EWD.onSocketMessage = function(messageObj) {
 			$('#wifiFormHospitalIntId').text(thisHosp.id);
 			$('#wifiFormCb1').prop('checked',false)
 			$('#wifiFormCb2').prop('checked',false)
+			$('#wifiFormCb2_2').prop('checked',false)
 			$('#wifiFormCb3').prop('checked',false)
+			$('#wifiFormCb3_2').prop('checked',false)
+			$('#patientcostform').show();
+			$('#staffcostform').show();
+			$('#allcostform').show();
 			$('#wifiCost').val('');
+			$('#wifiCost_2').val('');
 			$('#OrigEditedByName').text('');
 			$('#EditedByName').val('');
 			$('#wifiComment').val('');
@@ -364,10 +399,25 @@ EWD.onSocketMessage = function(messageObj) {
 			if (thisHosp.wifi) {
 				$('#wifiFormCb1').prop('checked',thisHosp.wifi.exists);
 				$('#wifiFormCb2').prop('checked',thisHosp.wifi.open);
-				$('#wifiFormCb3').prop('checked',thisHosp.wifi.free);
+				if ((thisHosp.wifi.openStaff == undefined && thisHosp.wifi.open) || thisHosp.wifi.openStaff) {
+					$('#wifiFormCb2_2').prop('checked',true);
+					}
+				var both=0;
+				if (thisHosp.wifi.free) {
+					$('#wifiFormCb3').prop('checked',true);
+					$('#patientcostform').hide();
+					both++;
+				}
+				if ((thisHosp.wifi.freeStaff == undefined && thisHosp.wifi.free) || thisHosp.wifi.freeStaff) {
+					$('#wifiFormCb3_2').prop('checked',true);
+					$('#staffcostform').hide();
+					both++;
+				}
+				if (both == 2) $('#allcostform').hide();
 				$('#wifiCost').val(thisHosp.wifi.cost);
+				if (thisHosp.wifi.costStaff) $('#wifiCost_2').val(thisHosp.wifi.costStaff);
 				$('#OrigEditedByName').text(thisHosp.wifi.editedBy);
-				$('#wifiComment').val(thisHosp.wifi.comment);
+				if (thisHosp.wifi.comment) $('#wifiComment').val(thisHosp.wifi.comment.replace(/\\u000a/g,'\n'));
 			}
 			if (thisHosp.Parking) {
 				$('#parkFormTotal').text(thisHosp.Parking.Total_parking_spaces);
