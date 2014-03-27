@@ -43,6 +43,9 @@
       <script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
       <script src="/respond/respond.js"></script>
     <![endif]-->
+    <!-- Twitter follow button code -->
+    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+    </script>
 
     <!-- Fav and touch icons -->
     <link rel="shortcut icon" href="/images/favicon.png" />
@@ -52,7 +55,6 @@
     <link rel="apple-touch-icon-precomposed" href="//ematic-solutions.com/cdn/bootstrap/2.3.1/ico/apple-touch-icon-57-precomposed.png" />
 
     <script src="/socket.io/socket.io.js"></script>
-    <!--[if (IE 6)|(IE 7)|(IE 8)]><script type="text/javascript" src="//ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js"></script><![endif]-->
 
     <title>My Hospital</title>
 
@@ -130,6 +132,7 @@
 			  <button id="aboutBtn" class="btn btn-default" data-toggle="modal" data-target="#aboutModal" >About</button>
 			  <button id="addWifiBtn" class="btn btn-default" style="display: none">Add Wifi Info</button>
 			  <button id="loadDataBtn" class="btn btn-default" style="display: none">Load New Data</button>
+			  <button id="showSurveyBtn" class="btn btn-default" >Show Raw Survey Results</button>
             </form>
           </div>
         </div>
@@ -138,6 +141,17 @@
 	
     <!-- Main body -->
     <div class="container-fluid">
+		<div class="panel-body" id="surveyListPnl" style="display: none">
+			<div class="panel panel-info">
+				<div class="panel-heading" id="surveyText"></div>
+					<div class="table-responsive">
+						<table class="table display" id='surveyListTable'>
+							<tbody></tbody>
+						</table>
+					</div>
+			</div>					
+		</div>
+
 	  <div class="col-sm-2" id="menuHolder">
 	    <div >
 			<img class="img-responsive" src="/images/CPC computer Solutions.jpg" </img>
@@ -161,8 +175,8 @@
 					</div>
 					<div class="modal-body">
 						<h3>aboutMyHospital</h3>
-						<h3>Build 0.4</h3>
-						<h4>26 march 2014</h4>
+						<h3>Build 0.5</h3>
+						<h4>27 march 2014</h4>
 						<h5>&copy; 2014 CPC Computer Solutions ltd</h5>
 						<hr/>
 						<p>Built by Chris Casey</p>
@@ -171,33 +185,37 @@
 						<hr/>
 						<p> <a href="http://chrispcasey.wordpress.com">Comment on my blog</a></p>
 						<p> Talk to me on Twitter @ChrisPCasey </p>
+						<div class="twitterbtn" id="twitterbtn">
+							<a href="https://twitter.com/ChrisPCasey" class="twitter-follow-button" data-show-count="false" data-size="large">Follow @ChrisPCasey</a>
+						</div>
+
 					</div>
 				  </div>
 				</div>
 			</div>
 			<div class="modal fade" id="loginModalPanel" tabindex="-1" role="dialog" aria-hidden="true">
-			<div class="modal-dialog" >
-			  <div  class="modal-content">
-				<div class="modal-header">
-				  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				  <h3 id="ewd-loginPanel-title">Authentication</h3>
-				</div>
-				<div id="loginPanelBody" class="modal-body">
-				  <legend>Please log in</legend>
-				  <div class="form-group">
-					<label for="username">Username: </label>
-					<input type="text" class="form-control focusedInput" id="username" placeholder="Enter your Username" />
+				<div class="modal-dialog" >
+				  <div  class="modal-content">
+					<div class="modal-header">
+					  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					  <h3 id="ewd-loginPanel-title">Authentication</h3>
+					</div>
+					<div id="loginPanelBody" class="modal-body">
+					  <legend>Please log in</legend>
+					  <div class="form-group">
+						<label for="username">Username: </label>
+						<input type="text" class="form-control focusedInput" id="username" placeholder="Enter your Username" />
+					  </div>
+					  <div class="form-group">
+						<label for="password">Password: &nbsp;</label>
+						<input type="password" class="form-control" id="password" placeholder="Enter your Password" />
+					  </div>
+					</div>
+					<div class="modal-footer">
+					  <a href="#" id="loginFormBtn" class="btn btn-primary">Login</a>
+					</div>
 				  </div>
-				  <div class="form-group">
-					<label for="password">Password: &nbsp;</label>
-					<input type="password" class="form-control" id="password" placeholder="Enter your Password" />
-				  </div>
 				</div>
-				<div class="modal-footer">
-				  <a href="#" id="loginFormBtn" class="btn btn-primary">Login</a>
-				</div>
-			  </div>
-			</div>
 			</div>
 			<div class="modal fade" id="loadDataPanel" tabindex="-1" role="dialog" aria-hidden="true">
 				<div class="modal-dialog" >
@@ -227,7 +245,7 @@
 			In it's first instance it is just showing Wifi and parking information
 			</p>
 			<p> Type in the first few characters in any of the following to see a selection of Hospitals
-			Then click on a hospital to see and update wifi details
+			Then click on a hospital to see and update wifi details (no login needed)
 			</p>
 			<div id="selectHospital" class=form">
 				<div class="form-group">
@@ -256,7 +274,7 @@
 			<div class="panel panel-primary col-sm-4" id="detailHolder" style="display: none">
 				<div class="panel-heading" id="wifiFormHospitalName" >
 				</div>
-				<div class="panel-body" id="detailPnl">
+				<div class="panel-body" id="detailPnl" style="padding-right:0px !important; padding-left:0px !important">
 					<ul class="nav nav-tabs" >
 						<li class="active"> <a href="#tabWifi" data-toggle="tab">Wifi</a></li>
 						<li><a href="#tabDetail" data-toggle="tab">Details</a></li>
@@ -295,26 +313,24 @@
 										<input id="wifiCost_2" type="number" pattern="[0-9]+([\.|,][0-9]+)?" class="form-control">
 									</div>
 								</div>
-
-							<div class="row form-group">
-								<label class="col-sm-4">Last Edit By:</label>
-								<div class="col-sm-6">
-								<p class="form-control-static" id="OrigEditedByName"></p>
-								</div>
-							</div>
-							
-							<div class="row form-group">
-								<label class="col-sm-4" for="EditedByName">Edited By: </label>
-								<div class="input-group">
-									<span class="input-group-addon">
-										<span class="glyphicon glyphicon-user">
+								<div class="row form-group">
+									<label class="col-sm-4">Last Edit By:</label>
+									<div class="col-sm-6">
+									<p class="form-control-static" id="OrigEditedByName"></p>
+									</div>
+								</div>								
+								<div class="row form-group">
+									<label class="col-sm-4" for="EditedByName">Edited By: </label>
+									<div class="input-group">
+										<span class="input-group-addon">
+											<span class="glyphicon glyphicon-user">
+											</span>
 										</span>
-									</span>
-									<input  type="text" class="form-control focusedInput" id="EditedByName" placeholder="Enter name"/>
+										<input  type="text" class="form-control focusedInput" id="EditedByName" placeholder="Enter name"/>
+									</div>
 								</div>
-							</div>
-							<textarea rows="3" class="form-control" id="wifiComment" placeholder="Add Comments" ></textarea> 
-							<a href="#" id="wifiFormBtn" class="btn btn-primary"  >Update</a>
+								<textarea rows="3" class="form-control" id="wifiComment" placeholder="Add Comments" ></textarea> 
+								<a href="#" id="wifiFormBtn" class="btn btn-primary"  >Update</a>
 							</form>
 						</div>
 						<div class="tab-pane" id="tabDetail">
@@ -361,6 +377,7 @@
 			</div>
 
     </div>
+	</div>
     <!-- Bootstrap core JavaScript  -->
     <!-- Placed at the end of the document so the pages load faster -->
 	

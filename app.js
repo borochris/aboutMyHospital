@@ -218,6 +218,24 @@ EWD.onSocketsReady = function() {
 		event.stopPropagation(); // prevent default bootstrap behavior
 		$('#loadDataPanel').modal('show');
 	  });
+	  $('body').on('click','#showSurveyBtn', function(event) {
+	  	event.preventDefault(); event.stopPropagation();
+		if ($('#showSurveyBtn').text() == 'Show Raw Survey Results') {
+			EWD.sockets.sendMessage({type: 'getSurveyResults',params:{}})
+			$('#menuHolder').hide();
+			$('#listHolder').hide();
+			$('#detailHolder').hide();
+			$('#summaryPage').hide();
+			$('#surveyListPnl').show();
+		}
+		else {
+			$('#menuHolder').show();
+			$('#listHolder').show();
+			$('#summaryPage').show();
+			$('#surveyListPnl').hide();
+			$('#showSurveyBtn').text('Show Raw Survey Results');
+		}
+	  });
 	$('body').on('click','#loadDataFormBtn', function(event) {
 		event.preventDefault(); event.stopPropagation(); // prevent default bootstrap behavior
 		dumpData=$('#dataDump').val();
@@ -340,8 +358,38 @@ EWD.onSocketMessage = function(messageObj) {
 		}
 		return;
 	}
-	if (messageObj.type === 'hospitalSummaryList') {
+	if (messageObj.type === 'surveyResults') {
 		//console.log('hospitalList: '+ JSON.stringify(messageObj,2));
+		var questions=messageObj.message.questions;
+		var answers=messageObj.message.answers;
+		//var order=['ID','q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','q11','q12','q13','q14','q15','q16','q17','q18'];
+		var order=['ID','q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','q11','q17','q18'];
+		var columns=[{'sTitle':'ID'}];
+		for (var i=1;i<order.length;i++) { //yes I know it atarts from 1
+			if (i!=2 && i!=4 && i!=6) columns.push({'sTitle':questions[order[i]]})
+			};
+		qData=[];
+		for (var i=0;i<answers.length;i++) {
+			var data=[];
+			for (var j=0;j<order.length;j++) {
+				if ((j == 1 || j==3 || j==5) && answers[i][order[j+1]] !='') {
+					data.push(answers[i][order[j]] + ' (' + answers[i][order[j+1]] + ')');
+					continue;
+					}
+				if (j!=2 && j!=4 && j!=6) data.push(answers[i][order[j]]);
+			}
+			qData.push(data);
+		};
+		
+		var surveyListTableDT=$('#surveyListTable').dataTable({
+			'bDestroy':true,
+			'aaData': qData,
+			'aoColumns': columns
+		}).css('width','');
+		$('#showSurveyBtn').text('hide survey results')
+		return;
+	}
+	if (messageObj.type === 'hospitalSummaryList') {
 		var aaData=[];
 		EWD.application.currentList={};
 		var data=messageObj.message;

@@ -106,6 +106,19 @@ module.exports = {
 		});
 		return;
 	}
+	if (type == 'getSurveyResults') {
+		if (!surveyQix) var surveyQix = new ewd.mumps.GlobalNode("cpcHospital", ["surveyQuestions",0]);
+		var surveyQuestions=surveyQix._getDocument();
+		if (!surveyAix) var surveyAix = new ewd.mumps.GlobalNode("cpcHospital", ["surveyAnswers"]);
+		var surveyAnswers=surveyAix._getDocument();
+		ewd.sendWebSocketMsg({
+			type: 'surveyResults',
+			message : {
+				questions: surveyQuestions,
+				answers: surveyAnswers
+			}
+		})
+	}
 	if (type == 'cityQuery') {
       if (!townIndex) var townIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","Town"]);
       var results = [];
