@@ -75,11 +75,13 @@ module.exports = {
 		var hospitals = {};
 		var i=0;
 		wifiIndex._forEach(function(id) {
-			i++;
-			if (i > 40) return true;
 			var onehospital=getHospital(ewd,id);
-			results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
-			hospitals[id] = onehospital;
+			if (onehospital.wifi.exists) {
+				i++;
+				//if (i > 40) return true;
+				results.push({id: id, hospitalId:onehospital.HospitalId,name: onehospital.Hospital_Name,data:onehospital});
+				hospitals[id] = onehospital;
+			}
 		});
       ewd.session.$('hospitals')._delete();
       ewd.session.$('hospitals')._setDocument(hospitals);
@@ -105,6 +107,49 @@ module.exports = {
 				}
 		});
 		return;
+	}
+	if (type == 'getParkingStats') {
+		if (!parkIndex) var parkIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","Parking"]);
+		var avgParkV=0;
+		var allParkV=0;
+		var highParkV={
+			intId:0,
+			Id:'',
+			name:'',
+			cost:0
+		};
+		var avgParkS=0;
+		var allParkS=0;
+		var highParkS={
+			intId:0,
+			Id:'',
+			name:'',
+			cost:0
+			};
+		var count=0;
+		parkIndex._forEach(function(id) {
+			count++;
+			if (!thisHospitalPtr) var thisHospitalPtr = new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals",id]);
+			var parking=thisHospitalPtr.$('Parking')._getDocument(1);
+			//var onehospital=getHospital(ewd,id);
+			allParkV=allParkV+parking.Average_hourly_fee;
+			allParkS=allParkS+parking.Average_hourly_Staff_fee;
+			if (highParkS.cost < parking.Average_hourly_Staff_fee) {
+				highParkS.cost=parking.Average_hourly_Staff_fee;
+				highParkS.intId=id;
+				highParkS.Id=thisHospitalPtr.$('HospitalId')._value;
+				highParkS.name=thisHospitalPtr.$('Hospital_Name')._value;
+			}
+			if (highParkV.cost < parking.Average_hourly_fee) {
+				highParkV.cost=parking.Average_hourly_fee;
+				highParkV.intId=id;
+				highParkV.Id=thisHospitalPtr.$('HospitalId')._value;
+				highParkV.name=thisHospitalPtr.$('Hospital_Name')._value;
+			}
+		})
+		avgParkS=(allParkS/count).toFixed(2);
+		avgParkV=(allParkV/count).toFixed(2);
+		return {highPublic:highParkV,highStaff:highParkS,averagePublic:avgParkV,averageStaff:avgParkS};
 	}
 	if (type == 'getSurveyResults') {
 		if (!surveyQix) var surveyQix = new ewd.mumps.GlobalNode("cpcHospital", ["surveyQuestions",0]);
@@ -239,6 +284,7 @@ module.exports = {
 	}
 	//this used to be secure only but have opened up to allow unauthenticated input
 	if (type === 'saveWifiData') {
+		console.log('**** saving wifi');
 		var intId=params.intId;
 		if (params.EditedBy == '') return {error: 'A username must be entered'};
 		var auditGbl = new ewd.mumps.GlobalNode("cpcHospitalAudit",[]);
@@ -252,10 +298,12 @@ module.exports = {
 		var auditData={
 			Type: 'wifi',
 			Id: intId,
+			HospitalId: data.HospitalId,
 			timeStamp: timeStamp,
 			user: params.EditedBy,
 			changes: {}
-		};	
+		};
+		if (params.Exists) params.Exists="True"
 		data.wifi={
 			exists: params.Exists,
 			open: params.Open,
@@ -263,7 +311,7 @@ module.exports = {
 			free: params.Free,
 			freeStaff: params.FreeStaff,
 			cost: params.Cost,
-			costStaff: params.costStaff,
+			costStaff: params.CostStaff,
 			editedBy: params.EditedBy,
 			comment: params.Comment
 		};
@@ -280,6 +328,7 @@ module.exports = {
 		newDataGbl._setDocument(data);
 		newDataIx._value = true;
 		auditGbl.$(lastAuditIx)._setDocument(auditData);
+		console.log('****  finished saving wifi');
 		return {
 			error:false,
 			message:'updated '+intId

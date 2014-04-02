@@ -133,6 +133,7 @@ EWD.onSocketsReady = function() {
 			params: {prefix: ''}
 	});
 	EWD.sockets.sendMessage({type: 'getStats', params:{}});
+	EWD.sockets.sendMessage({type: 'getParkingStats',params: {}});
 	$("#selectedHospital").select2({
 		placeholder: "Hospital name",
 		minimumInputLength: 4,
@@ -309,6 +310,13 @@ EWD.onSocketMessage = function(messageObj) {
 			$('#loadDataBtn').show();
 			$('#wifiFormBtn').show();
 		}
+		return;
+	}
+	if (messageObj.type === 'getParkingStats') {
+		//console.log('parking: '+ JSON.stringify(messageObj,2));
+		$('#parkHighStaff').text(messageObj.message.highStaff.name+' £'+messageObj.message.highStaff.cost.toFixed(2)+' (Staff)');
+		$('#parkHighPublic').text(messageObj.message.highPublic.name+' £'+messageObj.message.highPublic.cost.toFixed(2)+' (Public)');
+		$('#parkAverage').text('£'+messageObj.message.averageStaff+' (Staff) £'+messageObj.message.averagePublic+' (Public)')
 		return;
 	}
 	if (messageObj.type === 'cityMatches') {
