@@ -191,7 +191,7 @@
 						<div class="pull-right paypalbtn">
 							<form id="paypalForm" action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
 							<input type="hidden" name="cmd" value="_s-xclick">
-							<input type="hidden" name="hosted_button_id" value="xxxxxxxxxxxxxxx">
+							<input type="hidden" name="hosted_button_id" value="xxxxxxxxxxxxxx">
 							<input type="image" src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal – The safer, easier way to pay online.">
 							<img alt="" border="0" src="https://www.paypalobjects.com/en_GB/i/scr/pixel.gif" width="1" height="1">
 							</form>
@@ -324,7 +324,7 @@
 									<label class="col-sm-3">Staff</label>
 									<div class="input-group col-sm-4" >
 										<span class="input-group-addon">£</span>
-										<input id="wifiCost_2" type="number" pattern="[0-9]+([\.|,][0-9]+)?" class="form-control">
+										<input id="wifiCost_2" type="number" pattern="[0-9]+([\.|,][0-9]+)?" class="form-control"></input>
 									</div>
 								</div>
 								<div class="row form-group">
@@ -358,6 +358,7 @@
 							<strong>Contact No</strong><p id="wifiFormContactNo"></p>
 						</div>
 						<div class="tab-pane" id="tabParking">
+						  <form role="form">
 							<p id="parkFormHospitalIntId" style="display: none"></p>
 							<div class="row"  >
 								<label class="col-sm-6">Total Parking: </label><p id="parkFormTotal"></p>
@@ -371,11 +372,22 @@
 							<div class="row"  >
 								<label class="col-sm-6">Disabled Parking</label><p id="parkFormDisabled"></p>
 							</div>
-							<div class="row"  >
-								<label class="col-sm-6">Visitor hourly Cost</label><p id="parkFormVisitorCost"></p>
+							<div class="row form-in-line"  >
+								<label class="col-sm-6">Visitor hourly Cost</label>
+								<!-- <p id="parkFormVisitorCost"></p> -->
+								<div class="input-group col-sm-4" >
+									<span class="input-group-addon">£</span>
+									<input id="parkFormVisitorCost" type="number" pattern="[0-9]+([\.|,][0-9]+)?" class="form-control"></input>
+								</div>
+
 							</div>
-							<div class="row"  >
-								<label class="col-sm-6">Staff hourly Cost</label><p id="parkFormStaffCost"></p>
+							<div class="row form-in-line"  >
+								<label class="col-sm-6">Staff hourly Cost</label>
+								<!-- <p id="parkFormStaffCost"></p> -->
+								<div class="input-group col-sm-4" >
+									<span class="input-group-addon">£</span>
+									<input id="parkFormStaffCost" type="number" pattern="[0-9]+([\.|,][0-9]+)?" class="form-control"></input>
+								</div>
 							</div>
 							<div class="row"  >
 								<label class="col-sm-6">Concession Scheme</label><p id="parkFormConc"></p>
@@ -383,6 +395,25 @@
 							<div class="row"  >
 								<label class="col-sm-6">Disabled Charge</label><p id="parkFormDisabledCost"></p>
 							</div>
+							<div class="row form-group">
+								<label class="col-sm-4">Last Edit By:</label>
+								<div class="col-sm-6">
+								<p class="form-control-static" id="ParkOrigEditedByName"></p>
+								</div>
+							</div>															
+							<div class="row form-group">
+								<label class="col-sm-4" for="EditedByName">Edited By: </label>
+								<div class="input-group">
+									<span class="input-group-addon">
+										<span class="glyphicon glyphicon-user">
+										</span>
+									</span>
+									<input  type="text" class="form-control focusedInput" id="ParkEditedByName" placeholder="Enter name"/>
+								</div>
+							</div>
+
+							<a href="#" id="parkFormBtn" class="btn btn-primary"  >Update Costs</a>
+						  </form>
 						</div>
 
 					</div>	

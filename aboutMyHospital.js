@@ -15,6 +15,9 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+};
 var getHospital = function(ewd,row) {
 	if (!thisHospitalPtr) var thisHospitalPtr = new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals",row]);
 	return thisHospitalPtr._getDocument();
@@ -283,6 +286,57 @@ module.exports = {
       return;
 	}
 	//this used to be secure only but have opened up to allow unauthenticated input
+	if (type === 'saveParkData') {
+		var intId=params.intId;
+		if (params.EditedBy == '') return {error: 'A username must be entered'};
+		if (!isNumber(params.visitorCost)) return {error: 'Visitor parking cost must be numeric'};
+		if (!isNumber(params.staffCost)) return {error: 'Staff parking cost must be numeric'};
+		var auditGbl = new ewd.mumps.GlobalNode("cpcHospitalAudit",[]);
+		var lastAuditIx = auditGbl._last;
+		lastAuditIx++;
+		var changed=false;
+		var newDataGbl = new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals",intId]);
+		var newDataIx = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","Parking",intId,"data"]);
+		var data=newDataGbl._getDocument();
+		var timeStamp = new Date().toUTCString();
+		var oldRec=data.Parking || {};
+		var auditData={
+			Type: 'Parking',
+			Id: intId,
+			HospitalId: data.HospitalId,
+			timeStamp: timeStamp,
+			user: params.EditedBy,
+			changes: {}
+		};
+		if (params.visitorCost != oldRec.Average_hourly_fee) {
+			changed=true;
+			auditData.changes.Average_hourly_fee = {
+				original : oldRec.Average_hourly_fee || '',
+				revised : params.visitorCost
+				}
+			newDataGbl.$('Parking').$('Average_hourly_fee')._value = params.visitorCost;
+			};
+		if (params.staffCost != oldRec.Average_hourly_Staff_fee) {
+			changed=true;
+			auditData.changes.Average_hourly_Staff_fee = {
+				original : oldRec.Average_hourly_Staff_fee || '',
+				revised : params.staffCost
+				}
+			newDataGbl.$('Parking').$('Average_hourly_Staff_fee')._value = params.staffCost;
+			};
+		if (changed) {
+			newDataGbl.$('Parking').$('editedBy')._value = params.EditedBy;
+			newDataIx._value = true;
+			auditGbl.$(lastAuditIx)._setDocument(auditData);
+			return {
+				error:false,
+				message:'updated '+intId
+			};
+		}
+		else {
+			return {error:'Nothing changed'};
+		};
+	}
 	if (type === 'saveWifiData') {
 		console.log('**** saving wifi');
 		var intId=params.intId;

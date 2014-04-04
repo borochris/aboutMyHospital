@@ -18,6 +18,7 @@
 EWD.sockets.log=false;
 EWD.testFlag=0;
 EWD.application = {
+  errors: [],
   name: 'aboutMyHospital',
   currentPanel:'',
   previousPanel:'',
@@ -296,6 +297,21 @@ EWD.onSocketsReady = function() {
 			}
 		});
 	});
+	$('body').on('click','#parkFormBtn', function(event) {
+		event.preventDefault(); event.stopPropagation(); // prevent default bootstrap behavior
+		EWD.sockets.sendMessage({
+			type: 'saveParkData',
+			params: {
+				id: $('#wifiFormHospitalId').text(),
+				intId: $('#wifiFormHospitalIntId').text(),
+				visitorCost: $('#parkFormVisitorCost').val(),
+				staffCost: $('#parkFormStaffCost').val(),
+				EditedBy: $('#ParkEditedByName').val(),
+				testFlag: EWD.testFlag
+			}
+		});
+	});
+
 };
 
 EWD.onSocketMessage = function(messageObj) {
@@ -357,6 +373,20 @@ EWD.onSocketMessage = function(messageObj) {
 		return;
 	}
 	if (messageObj.type === 'saveWifiData') {
+		if (messageObj.message.error) {
+			toastr.warning(messageObj.message.error);
+			return;
+			};
+		if (messageObj.message.message) {
+			toastr.success(messageObj.message.message);
+		}
+		return;
+	}
+	if (messageObj.type === 'saveParkData') {
+		if (!messageObj.ok && typeof(messageObj.message)=="string" && messageObj.message.slice(0,17) == 'Error returned by') { 
+			toastr.error(JSON.stringify(messageObj));
+			EWD.application.errors.push(messageObj);
+		}
 		if (messageObj.message.error) {
 			toastr.warning(messageObj.message.error);
 			return;
@@ -447,6 +477,19 @@ EWD.onSocketMessage = function(messageObj) {
 			$('#OrigEditedByName').text('');
 			$('#EditedByName').val('');
 			$('#wifiComment').val('');
+			
+			$('#parkFormTotal').text('');
+			$('#parkFormStaff').text('');
+			$('#parkFormVisit').text('');
+			$('#parkFormDisabled').text('');
+			$('#parkFormVisitorCost').text('');
+			$('#parkFormVisitorCost').val('');
+			$('#parkFormStaffCost').text('');
+			$('#parkFormStaffCost').val('');
+			$('#parkFormConc').text('');
+			$('#parkFormDisabledCost').text('');
+			$('#ParkOrigEditedByName').text('');
+
 			var address='';;
 			$('#wifiFormHospitalAddress').html(thisHosp.Address_line_1+'<br>'+thisHosp.Address_line_2+'<br>'+thisHosp.Address_line_3+'<br>'+thisHosp.Address_line_4+'<br>'+thisHosp.Address_line_5+'<br>'+thisHosp.PostCode);
 			$('#wifiFormHealthACode').text(thisHosp.High_Level_Health_Authority_Code);
@@ -476,14 +519,19 @@ EWD.onSocketMessage = function(messageObj) {
 				if (thisHosp.wifi.comment) $('#wifiComment').val(thisHosp.wifi.comment.replace(/\\u000a/g,'\n'));
 			}
 			if (thisHosp.Parking) {
+				if (thisHosp.Parking.Average_hourly_Staff_fee) thisHosp.Parking.Average_hourly_fee.toFixed(2);
+				if (thisHosp.Parking.Average_hourly_Staff_fee) thisHosp.Parking.Average_hourly_Staff_fee.toFixed(2);
 				$('#parkFormTotal').text(thisHosp.Parking.Total_parking_spaces);
 				$('#parkFormStaff').text(thisHosp.Parking.Designated_Staff_parking);
 				$('#parkFormVisit').text(thisHosp.Parking.Designated_parking);
 				$('#parkFormDisabled').text(thisHosp.Parking.Designated_disabled_parking);
-				$('#parkFormVisitorCost').text(thisHosp.Parking.Average_hourly_fee);
-				$('#parkFormStaffCost').text(thisHosp.Parking.Average_hourly_Staff_fee);
+				//$('#parkFormVisitorCost').text('£'+thisHosp.Parking.Average_hourly_fee);
+				$('#parkFormVisitorCost').val(thisHosp.Parking.Average_hourly_fee);
+				//$('#parkFormStaffCost').text('£'+thisHosp.Parking.Average_hourly_Staff_fee);
+				$('#parkFormStaffCost').val(thisHosp.Parking.Average_hourly_Staff_fee);
 				$('#parkFormConc').text(thisHosp.Parking.Visitor_concession_scheme);
 				$('#parkFormDisabledCost').text(thisHosp.Parking.disabled_parking_charge);
+				$('#ParkOrigEditedByName').text(thisHosp.Parking.editedBy || '');
 			}
 
 			$('#addWifiForm').show();

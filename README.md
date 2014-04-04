@@ -3,7 +3,7 @@ aboutMyHospital
 aboutMyHospital is an Open Source project built on behalf on the nhshackday group
 This is currently very much work in progress and will be updated as the work progresses.
 
-Version 0.1
+Version 0.5
 
 Licence
 
