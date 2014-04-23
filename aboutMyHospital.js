@@ -15,6 +15,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+
 function isNumber(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 };
@@ -44,9 +45,51 @@ var cpcLogin = function(accessCode, verifyCode, ewd) {
     return {error: result};
   }
 };
+//add verification to this user/email combination
+var addVerify = function(username,emailAdd,ewd) {
+  var authP = new ewd.mumps.GlobalNode('%zewdTemp', [process.pid]);
+  authP._delete();
+  authP._setDocument({
+    inputs:{
+      mail: emailAdd,
+      username: username,
+	  application: 'aboutMyHospital'
+    }
+  });
+  var result = ewd.mumps.function('addMailVerify^ZZCPCH00', '');
+  if (result === '') {
+    var document = authP._getDocument();
+    return document.outputs.verified;
+  }
+  else {
+    return {error: result};
+  }
+};
+
+//check to see if this user/email combination is verified
+var checkVerify = function(username,emailAdd,ewd) {
+  var authP = new ewd.mumps.GlobalNode('%zewdTemp', [process.pid]);
+  authP._delete();
+  authP._setDocument({
+    inputs:{
+      mail: emailAdd,
+      username: username,
+	  application: 'aboutMyHospital'
+    }
+  });
+  var result = ewd.mumps.function('checkVerify^ZZCPCH00', '');
+  if (result === '') {
+    var document = authP._getDocument();
+    return {error:false,verified:document.outputs.verified};
+  }
+  else {
+    return {error: result,verified:false};
+  }
+};
 module.exports = {
- 
   onSocketMessage: function(ewd) {
+  	var myMail;
+	if (!myMail) myMail=ewd.util.requireAndWatch('mailHandlers');
     var wsMsg = ewd.webSocketMessage;
     var type = wsMsg.type;
     var params = wsMsg.params;
@@ -388,9 +431,24 @@ module.exports = {
 			message:'updated '+intId
 			};
 	}
+	if (type === 'checkVerify') {
+		return checkVerify(params.username,params.emailAddr,ewd);
+	};
+	if (type === 'addVerify') {
+		return addVerify(params.username,params.emailAddr,ewd);
+	}
+	if (myMail.onSocketMessage(ewd)) return;
 	//-------------------------------------------------------------------------------------
 	//--------------- don't go past this point unless Authenticated -----------------------
-    if (!ewd.session.isAuthenticated) return;
+    if (!ewd.session.isAuthenticated) {
+		ewd.sendWebSocketMsg({
+          type: 'unknownMessage',
+          message: {
+            text: 'An unknown or unauthorised message was received by the server process, message type: '+type
+          }
+        });
+		return;
+		}
 	if (type === 'loadDumpData') {
 		var table=params.table;
 		var data=params.data;
@@ -409,7 +467,6 @@ module.exports = {
             text: 'An unknown message was received by the server process, message type: '+type
           }
         });
-
   }
 };
 
