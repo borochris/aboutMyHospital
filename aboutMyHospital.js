@@ -15,6 +15,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+
 function isNumber(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 };
@@ -44,9 +45,82 @@ var cpcLogin = function(accessCode, verifyCode, ewd) {
     return {error: result};
   }
 };
+//add verification to this user/email combination
+var addVerify = function(username,emailAdd,ewd) {
+  var authP = new ewd.mumps.GlobalNode('%zewdTemp', [process.pid]);
+  authP._delete();
+  authP._setDocument({
+    inputs:{
+      mail: emailAdd,
+      username: username,
+	  application: 'aboutMyHospital'
+    }
+  });
+  var result = ewd.mumps.function('addMailVerify^ZZCPCH00', '');
+  if (result === '') {
+    var document = authP._getDocument();
+    return document.outputs.verified;
+  }
+  else {
+    return {error: result};
+  }
+};
+
+//check to see if this user/email combination is verified
+var checkVerify = function(username,emailAdd,ewd) {
+  var authP = new ewd.mumps.GlobalNode('%zewdTemp', [process.pid]);
+  authP._delete();
+  authP._setDocument({
+    inputs:{
+      mail: emailAdd,
+      username: username,
+	  application: 'aboutMyHospital'
+    }
+  });
+  var result = ewd.mumps.function('checkVerify^ZZCPCH00', '');
+  if (result === '') {
+    var document = authP._getDocument();
+    return {error:false,verified:document.outputs.verified};
+  }
+  else {
+    return {error: result,verified:false};
+  }
+};
 module.exports = {
- 
+	//external call - check reload
+	swagger: function(ewd,path) {
+		if (!hDocsix) var hDocsix = new ewd.mumps.GlobalNode("cpcHospital", ["Documentation"]);
+		
+		if (path) {
+			ewd.log('**************** '+JSON.stringify(path)+' ************** '+path.length+' **************************',1)
+			if (path.length > 2  && path[2] !='' ) {
+				return hDocsix.$(path[2])._getDocument();
+				}
+			}
+		
+		return hDocsix.$('control')._getDocument();
+	},
+	getHospitalByCode: function(ewd,hCode) {
+		if (!hCodeIndex) var hCodeIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","id"]);
+		var id = hCodeIndex.$(hCode)._next('');
+		if (id==='') return {error: 'Hospital with that Id Not Found'};
+		return getHospital(ewd,id);
+	},
+	getHospitalWifiByCode: function(ewd,hCode) {
+	 var ret=this.getHospitalByCode(ewd,hCode);
+	 if (ret.error) return ret.error;
+	 if (!ret.wifi) return {error:'No wifi details for this hospital'};
+	 return ret.wifi;
+	},
+	getHospitalParkingByCode: function(ewd,hCode) {
+	 var ret=this.getHospitalByCode(ewd,hCode);
+	 if (ret.error) return ret.error;
+	 if (!ret.Parking) return {error:'No parking details for this hospital'};
+	 return ret.Parking;
+	},
   onSocketMessage: function(ewd) {
+  	var myMail;
+	if (!myMail) myMail=ewd.util.requireAndWatch('mailHandlers');
     var wsMsg = ewd.webSocketMessage;
     var type = wsMsg.type;
     var params = wsMsg.params;
@@ -91,7 +165,8 @@ module.exports = {
 	  ewd.sendWebSocketMsg({
         type: 'hospitalSummaryList',
         message: results
-      });		
+      });
+    return;
 	}
 	if (type == 'getStats') {
 		if (!statsIndex) var statsIndex =  new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals"]);
@@ -135,7 +210,9 @@ module.exports = {
 			if (!thisHospitalPtr) var thisHospitalPtr = new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals",id]);
 			var parking=thisHospitalPtr.$('Parking')._getDocument(1);
 			//var onehospital=getHospital(ewd,id);
-			allParkV=allParkV+parking.Average_hourly_fee;
+      //if (!isNan(parking.Average_hourly_fee)) {
+        allParkV=allParkV+Number(parking.Average_hourly_fee);
+      //};
 			allParkS=allParkS+parking.Average_hourly_Staff_fee;
 			if (highParkS.cost < parking.Average_hourly_Staff_fee) {
 				highParkS.cost=parking.Average_hourly_Staff_fee;
@@ -388,9 +465,24 @@ module.exports = {
 			message:'updated '+intId
 			};
 	}
+	if (type === 'checkVerify') {
+		return checkVerify(params.username,params.emailAddr,ewd);
+	};
+	if (type === 'addVerify') {
+		return addVerify(params.username,params.emailAddr,ewd);
+	}
+	if (myMail.onSocketMessage(ewd)) return;
 	//-------------------------------------------------------------------------------------
 	//--------------- don't go past this point unless Authenticated -----------------------
-    if (!ewd.session.isAuthenticated) return;
+    if (!ewd.session.isAuthenticated) {
+		ewd.sendWebSocketMsg({
+          type: 'unknownMessage',
+          message: {
+            text: 'An unknown or unauthorised message was received by the server process, message type: '+type
+          }
+        });
+		return;
+		}
 	if (type === 'loadDumpData') {
 		var table=params.table;
 		var data=params.data;
@@ -409,7 +501,6 @@ module.exports = {
             text: 'An unknown message was received by the server process, message type: '+type
           }
         });
-
   }
 };
 
