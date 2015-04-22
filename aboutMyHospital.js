@@ -87,6 +87,37 @@ var checkVerify = function(username,emailAdd,ewd) {
   }
 };
 module.exports = {
+	//external call - check reload
+	swagger: function(ewd,path) {
+		if (!hDocsix) var hDocsix = new ewd.mumps.GlobalNode("cpcHospital", ["Documentation"]);
+		
+		if (path) {
+			ewd.log('**************** '+JSON.stringify(path)+' ************** '+path.length+' **************************',1)
+			if (path.length > 2  && path[2] !='' ) {
+				return hDocsix.$(path[2])._getDocument();
+				}
+			}
+		
+		return hDocsix.$('control')._getDocument();
+	},
+	getHospitalByCode: function(ewd,hCode) {
+		if (!hCodeIndex) var hCodeIndex = new ewd.mumps.GlobalNode("cpcHospitalIx", ["Hospitals","id"]);
+		var id = hCodeIndex.$(hCode)._next('');
+		if (id==='') return {error: 'Hospital with that Id Not Found'};
+		return getHospital(ewd,id);
+	},
+	getHospitalWifiByCode: function(ewd,hCode) {
+	 var ret=this.getHospitalByCode(ewd,hCode);
+	 if (ret.error) return ret.error;
+	 if (!ret.wifi) return {error:'No wifi details for this hospital'};
+	 return ret.wifi;
+	},
+	getHospitalParkingByCode: function(ewd,hCode) {
+	 var ret=this.getHospitalByCode(ewd,hCode);
+	 if (ret.error) return ret.error;
+	 if (!ret.Parking) return {error:'No parking details for this hospital'};
+	 return ret.Parking;
+	},
   onSocketMessage: function(ewd) {
   	var myMail;
 	if (!myMail) myMail=ewd.util.requireAndWatch('mailHandlers');
@@ -134,7 +165,8 @@ module.exports = {
 	  ewd.sendWebSocketMsg({
         type: 'hospitalSummaryList',
         message: results
-      });		
+      });
+    return;
 	}
 	if (type == 'getStats') {
 		if (!statsIndex) var statsIndex =  new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals"]);
@@ -178,7 +210,9 @@ module.exports = {
 			if (!thisHospitalPtr) var thisHospitalPtr = new ewd.mumps.GlobalNode("cpcHospital", ["Hospitals",id]);
 			var parking=thisHospitalPtr.$('Parking')._getDocument(1);
 			//var onehospital=getHospital(ewd,id);
-			allParkV=allParkV+parking.Average_hourly_fee;
+      //if (!isNan(parking.Average_hourly_fee)) {
+        allParkV=allParkV+Number(parking.Average_hourly_fee);
+      //};
 			allParkS=allParkS+parking.Average_hourly_Staff_fee;
 			if (highParkS.cost < parking.Average_hourly_Staff_fee) {
 				highParkS.cost=parking.Average_hourly_Staff_fee;
